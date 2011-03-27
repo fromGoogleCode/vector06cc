@@ -29,103 +29,121 @@
 
 #include "serial.h"
 
-
-#define vputs(s) {}
-#define vputc(s) {}
-#define vputh(s) {}
-#define vdump(s) {}
-#define vnl()	 {}
-
 #if VERBOSE >= 3
-  #undef vdump
-  #define vdump(b)  print_buff(b)
+	#define vdump(b)  print_buff(b)
+#else
+	#define vdump(s) {}
+
+	#if VERBOSE >= 2
+		#define vputs(s) ser_puts(s)
+		#define vputc(c) ser_putc(c)
+		#define vputh(x) print_hex(x)
+		#define vnl()	 ser_nl()
+	#else
+		#define vputs(s) {}
+		#define vputc(s) {}
+		#define vputh(s) {}
+		#define vnl()	 {}
+	#endif
 #endif
 
-#if VERBOSE >= 2
-  #undef vputs
-  #undef vputc
-  #undef vputh
-  #undef vnl
-  #define vputs(s) ser_puts(s)
-  #define vputc(c) ser_putc(c)
-  #define vputh(x) print_hex(x)
-  #define vnl()	   ser_nl()
-#endif
+static FDDImage fddimage;
+static FIL	file1;
 
-FDDImage fddimage;
-FIL	file1;
+const char* FResultAsText(FRESULT _result)
+{
+	const char* text[] =
+	{ "OK"
+	, "NOT_READY"
+	, "NO_FILE"
+	, "NO_PATH"
+	, "INVALID_NAME"
+	, "INVALID_DRIVE"
+	, "DENIED"
+	, "EXIST"
+	, "RW_ERROR"
+	, "WRITE_PROTECTED"
+	, "NOT_ENABLED"
+	, "NO_FILESYSTEM"
+	, "INVALID_OBJECT"
+	};
+	if (_result < sizeof(text)/sizeof(text[0])) return text[_result];
+	else return "FR_RANGE";
+}
+
+
+static BOOL VerifyResult( const FRESULT	_verified
+						, const char*	_function
+						, FRESULT*		_result
+						)
+{
+	*_result = _verified;
+	ser_puts(_function);
+	ser_puts(":");
+	ser_puts(FResultAsText(_verified));
+	ser_nl();
+	return (_verified == FR_OK) ? TRUE : FALSE;
+}
+
+
 
 #define DELAY_RELOAD 128
 
-uint8_t blink(void);
-uint8_t slave();;
-
-uint8_t thrall(char *imagefile, uint8_t *buffer) {
-	uint8_t first = 0;
-	uint8_t result;
-
-	SLAVE_STATUS = CPU_STATUS_DRVNOTRDY;
-
-	menu_init();
+static uint8_t blink()
+{
+	static uint8_t leds = 0x01;
+	static uint8_t delay = 1;
+	static uint8_t tick;
 	
-	for(;;) {
-		SLAVE_STATUS = CPU_STATUS_DRVNOTRDY;
-		do {
-			philes_mount();
-			result = philes_opendir();
-			if (result != FR_OK) break;
-			
-			if (!first) {
-				philes_nextfile(imagefile+10, 1);
-				first++;
-			}
-			
-			ser_nl();
-			if ((result = f_open(&file1, imagefile, FA_READ)) != FR_OK) {
-				ser_puts("Error: ");
-				first = 0; // try to recover by re-reading the directory
-			} else {
-				ser_puts("=> ");
-			}
-			ser_puts(imagefile); ser_putc('$');ser_nl();
+	tick = --delay == 0;
 
-			if (result != FR_OK) break;
-			
-			fdd_load(&file1, &fddimage, buffer);
-			slave(buffer);
-		} while(0);
-		menu_busy(2);
-		menu_dispatch(0);
-		delay2(10);
+	menu_busy(0);
+	
+	//GREEN_LEDS = JOYSTICK;
+	if (tick)
+	{
+		delay = DELAY_RELOAD;
+		GREEN_LEDS = leds;
+		leds <<= 1;
+		if (leds == 0) leds = 0x01;
 	}
+	
+	return menu_dispatch(tick);
 }
 
-// thrall forever
-uint8_t slave() {
-	uint8_t result;
-	uint8_t t1;
+
+
+static FRESULT slave()
+{
+	FRESULT	result;
+	uint8_t	t1;
 	uint8_t cmd;
 
 	SLAVE_STATUS = 0;	// clear drive not ready flag
 
-	for (;result != FR_RW_ERROR;) {
+	for (;result != FR_RW_ERROR;) //hmm... should be == FR_OK
+	{
 		//SLAVE_STATUS = 0;
 		result = FR_OK;
-		if (disk_poll(0) == RES_NOTRDY) {
+		
+		while (disk_poll() == RES_NOTRDY)
+		{
 			vputs("NOSD");
 			break;
 		}
 		
-		cmd = MASTER_COMMAND;
-		switch (cmd & 0xf0) {
-		case CPU_REQUEST_READ:
+		cmd = MASTER_COMMAND; //IOPORT_CPUREQ (specialio.h)
+		switch (cmd & 0xf0)
+		{
+		case CPU_REQUEST_READ: //slave.h
 			SLAVE_STATUS = CPU_STATUS_BUSY;
 			menu_busy(1);
 			vnl();
 			vputs("rHST:");
 			t1 = cmd & 0x02; // side
 			
-			if (t1 == 0) {
+			if (t1 == 0)
+			{
 				fdd_seek(&fddimage, 0x01 & cmd, MASTER_TRACK, MASTER_SECTOR);
 
 				vputh(fddimage.cur_side);
@@ -137,14 +155,16 @@ uint8_t slave() {
 				vputc(':');
 				vputh(result);
 				vdump(fddimage.buffer);
-			} else {
+			}
+			else
+			{
 				result = FR_INVALID_DRIVE;
 				vputs("DRVERR");
 			}
 			
-			SLAVE_STATUS = CPU_STATUS_COMPLETE | (result == FR_OK ? CPU_STATUS_SUCCESS : 0) | (result == FR_RW_ERROR ? CPU_STATUS_CRC : 0);
-			// touche!
-
+			SLAVE_STATUS= CPU_STATUS_COMPLETE
+						| (result == FR_OK ? CPU_STATUS_SUCCESS : 0)
+						| (result == FR_RW_ERROR ? CPU_STATUS_CRC : 0);
 			break;
 		case CPU_REQUEST_READADDR:
 			// fill the beginning of buffer with position info
@@ -161,7 +181,9 @@ uint8_t slave() {
 				result = fdd_readadr(&fddimage);
 				
 				//for (t1 = 0; t1 < 6; t1++) vputh(buffer[t1]);
-			} else {
+			}
+			else
+			{
 				result = FR_INVALID_DRIVE;
 				vputs("DRVERR");
 			}
@@ -223,7 +245,8 @@ uint8_t slave() {
 			break;
 		default:
 			SLAVE_STATUS = 0;
-			if ((result = blink()) != MENURESULT_NOTHING) {
+			if ((result = blink()) != MENURESULT_NOTHING)
+			{
 				return result;
 			}
 			break;
@@ -235,22 +258,27 @@ uint8_t slave() {
 }
 
 
-uint8_t blink(void) {
-	static uint8_t leds = 0x01;
-	static uint8_t delay = 1;
-	static uint8_t tick;
-	
-	tick = --delay == 0;
 
-	menu_busy(0);
+FRESULT thrall(char *_ptrfile, uint8_t *_buffer)
+{
+	FRESULT result = FR_OK;
+	int once = 0;
 	
-	//GREEN_LEDS = JOYSTICK;
-	if (tick) {
-		delay = DELAY_RELOAD;
-		GREEN_LEDS = leds;
-		leds <<= 1;
-		if (leds == 0) leds = 0x01;
+	SLAVE_STATUS = CPU_STATUS_DRVNOTRDY;
+	menu_init();
+	
+	if (VerifyResult(philes_mount(), "philes_mount", &result))
+	{
+		if (VerifyResult(philes_opendir(), "philes_opendir", &result))
+		if (!once++ && VerifyResult(philes_nextfile(_ptrfile+10, 1), "philes_nextfile", &result))
+		while (VerifyResult(f_open(&file1, _ptrfile, FA_READ), "f_open", &result))
+		{
+			ser_puts("=> "); ser_puts(_ptrfile); ser_putc('$');ser_nl();
+			fdd_load(&file1, &fddimage, _buffer);
+			slave();
+			//f_close(&file1);
+		}
+		menu_busy(2); menu_dispatch(0);	delay2(100);
 	}
-	
-	return menu_dispatch(tick);
+	return result;
 }

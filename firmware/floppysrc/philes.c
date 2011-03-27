@@ -17,16 +17,18 @@
 //
 // --------------------------------------------------------------------
 
+#include "config.h"
 #include "integer.h"
 #include "philes.h"
 #include "diskio.h"
 #include "tff.h"
+#include "serial.h"
 
 #include <string.h>
 
-FATFS 		fatfs;
-FILINFO 	finfo;
-DIR 		dir;
+static FATFS	fatfs;
+static FILINFO 	finfo;
+static DIR 		dir;
 
 char *ptrfile = "/VECTOR06/xxxxxxxx.xxx\0\0\0";
 
@@ -39,14 +41,29 @@ BYTE endsWith(char *s1, const char *suffix) {
 	return strcmp(&s1[s1len - sulen], suffix) == 0;
 }
 
-FRESULT philes_mount() {
+
+
+FRESULT philes_mount()
+{
+#if VERBOSE >= 2
 	FRESULT result = FR_NO_FILESYSTEM;
-	
-	disk_initialize(0); 
-	return f_mount(0, &fatfs);
+	DSTATUS dstatus = disk_initialize(0);
+	if (dstatus) ser_putx("disk_initialize", dstatus);
+	else
+	{
+		result = f_mount(0, &fatfs);
+		if (result != FR_OK) ser_putx("f_mount",result);
+	}
+	return result;
+#else	
+	return disk_initialize(0) ? FR_NO_FILESYSTEM : f_mount(0, &fatfs);
+#endif
 }
 
-FRESULT philes_opendir() {
+
+
+FRESULT philes_opendir()
+{
 	FRESULT result;
 	
 	ptrfile[9] = 000; 
@@ -56,29 +73,38 @@ FRESULT philes_opendir() {
 	return result;
 }
 
-static void strxcpy(char *dst, char *src) {
+
+
+static void strxcpy(char *dst, char *src)
+{
 	uint8_t i = 12;
 	while (*src != 0 && i--) *dst++ = *src++;
+	while (i--) *dst++ = 0;
 }
 
+
+
 // fill in file name in buffer pointed by filename
-FRESULT philes_nextfile(char *filename, uint8_t terminate) {
-	while ((f_readdir(&dir, &finfo) == FR_OK) && finfo.fname[0]) {
-		if (finfo.fattrib & AM_DIR) {
-			// nowai
-		} else {
-			if (endsWith(finfo.fname, ".FDD")) {
-				if (filename != 0) {
-					if (terminate) {
-						strncpy(filename, finfo.fname, 12);
-					} else {
-						strxcpy(filename, finfo.fname);
-					}
+										//bool here
+FRESULT philes_nextfile(char *filename, uint8_t terminate)
+{
+	FRESULT	result = FR_OK;
+	
+	while ((f_readdir(&dir, &finfo) == FR_OK) && finfo.fname[0])
+	{
+		if (finfo.fattrib & AM_DIR) {}
+		else
+		{
+			if (endsWith(finfo.fname, ".FDD"))
+			{
+				if (filename)
+				{
+					if (terminate) strxcpy(filename, finfo.fname); //strncpy(filename, finfo.fname, 12);
+					else strxcpy(filename, finfo.fname);
 				}
 				return 0;
 			}
 		}
 	}
-	
 	return FR_NO_FILE;
 }

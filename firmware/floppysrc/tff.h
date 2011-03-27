@@ -146,9 +146,9 @@ typedef enum {
 	FR_NOT_ENABLED,		/* 10 */
 	FR_NO_FILESYSTEM,	/* 11 */
 	FR_INVALID_OBJECT	/* 12 */
-} FRESULT;
+} _FRESULT;
 
-
+typedef BYTE FRESULT;
 
 /*-----------------------------------------------------*/
 /* FatFs module application interface                  */

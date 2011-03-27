@@ -180,14 +180,6 @@ void power_off (void)
 	Stat |= STA_NOINIT;		/* Set STA_NOINIT */
 }
 
-static
-BYTE chk_power(void)		/* Socket power state: 0=off, 1=on */
-{
-	return (BYTE)1;
-//	return (PORTE & 0x80) ? 0 : 1;
-}
-
-
 
 /*-----------------------------------------------------------------------*/
 /* Receive a data packet from MMC                                        */
@@ -367,18 +359,17 @@ BYTE send_cmd (
 /*-----------------------------------------------------------------------*/
 /* Poll the card                                                         */
 /*-----------------------------------------------------------------------*/
-DSTATUS disk_poll(BYTE drv) {
+DSTATUS disk_poll()
+{
 	BYTE res, n;
-	if (drv) return STA_NOINIT;			/* Supports only single drive */
 
 	// use Receive OCR as a dummy command: we just need to see if there's any proper response
 	/* Receive OCR as an R3 resp (4 bytes) */
-	if (send_cmd(CMD58, 0) == 0) {	/* READ_OCR */
+	if (send_cmd(CMD58, 0) == 0)
+	{	/* READ_OCR */
 		for (n = 4; n; n--) /* *ptr++ = */rcvr_spi();
 		res = RES_OK;
-	} else {
-		res = RES_NOTRDY;
-	}
+	} else res = RES_NOTRDY;
 
 	release_spi();
 
@@ -389,9 +380,8 @@ DSTATUS disk_poll(BYTE drv) {
 /* Initialize Disk Drive                                                 */
 /*-----------------------------------------------------------------------*/
 
-DSTATUS disk_initialize (
-	BYTE drv		/* Physical drive nmuber (0) */
-)
+DSTATUS disk_initialize (BYTE drv		/* Physical drive nmuber (0) */
+						)
 {
 	BYTE n, cmd, ty, ocr[4];
 
@@ -535,8 +525,16 @@ DRESULT disk_write (
 /*-----------------------------------------------------------------------*/
 /* Miscellaneous Functions                                               */
 /*-----------------------------------------------------------------------*/
-
 #if _USE_IOCTL != 0
+
+static
+BYTE chk_power(void)		/* Socket power state: 0=off, 1=on */
+{
+	return (BYTE)1;
+//	return (PORTE & 0x80) ? 0 : 1;
+}
+
+
 DRESULT disk_ioctl (
 	BYTE drv,		/* Physical drive nmuber (0) */
 	BYTE ctrl,		/* Control code */

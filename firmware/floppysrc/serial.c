@@ -24,13 +24,15 @@
 
 #ifdef WITH_SERIAL
 void ser_putc(char c) {
-	for(; SERIAL_CTL & SERIAL_RDY != 0;);
+	for(; SERIAL_CTL & SERIAL_RDY; );
 	SERIAL_TxD = c;
 }
 
-void ser_puts(char *s) {
-	for(; *s != 0; s++) {
-		for(; SERIAL_CTL & SERIAL_RDY != 0;);
+void ser_puts(const char *s)
+{
+	for(; *s != 0; s++)
+	{
+		for(; SERIAL_CTL & SERIAL_RDY; );
 		SERIAL_TxD = *s;
 	}
 }
@@ -39,6 +41,15 @@ void ser_nl() {
 	ser_putc('\r');
 	ser_putc('\n');
 }
+
+void ser_putx(const char *s, BYTE b)
+{
+	ser_puts(s);
+	ser_putc(':');
+	print_hex(b);
+	ser_nl();
+}
+
 
 BYTE nybble_alpha(BYTE nybble) {
 	return nybble + (nybble < 0x0a ? '0' : 'a'-0x0a);
@@ -49,7 +60,7 @@ void print_hex(BYTE b) {
 	ser_putc(nybble_alpha(b & 0x0f));
 }
 
-void print_buff(BYTE *Buffer) {
+void print_buff(const BYTE *Buffer) {
   WORD ofs;
   BYTE add;
   BYTE c;
@@ -68,4 +79,3 @@ void print_buff(BYTE *Buffer) {
   ser_nl();
 }
 #endif
-

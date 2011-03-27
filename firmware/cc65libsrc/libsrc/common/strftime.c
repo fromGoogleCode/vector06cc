@@ -40,7 +40,7 @@
 
 
 /* Use static local variables for speed */
-#pragma staticlocals (on);
+#pragma static-locals (on);
 
 
 

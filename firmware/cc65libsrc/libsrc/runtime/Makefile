@@ -9,13 +9,12 @@
 
 SYS	= none
 
-AR = ar65
 AS = ca65
 CC = cc65
 LD = ld65
 
-AFLAGS	= -t $(SYS) -I../../asminc
-CFLAGS	= -Osir -g -T -t $(SYS) --forget-inc-paths -I . -I ../../include
+AFLAGS	= -t $(SYS) --forget-inc-paths -I../../asminc
+CFLAGS	= -Osir -t $(SYS) --cpu 6502 --forget-inc-paths -I . -I ../../include
 
 #--------------------------------------------------------------------------
 # Rules
@@ -82,6 +81,8 @@ OBJS = 	add.o		\
        	ge.o		\
        	gt.o		\
        	icmp.o		\
+        idiv32by16r16.o \
+        imul16x16r32.o  \
 	incax1.o	\
 	incax2.o	\
        	incax3.o	\
@@ -118,7 +119,7 @@ OBJS = 	add.o		\
        	ldec.o		\
        	ldiv.o		\
        	le.o		\
-       	leasp.o		\
+        leaaxsp.o       \
        	leave.o		\
        	leq.o		\
        	lge.o		\
@@ -142,6 +143,7 @@ OBJS = 	add.o		\
        	lsubeq.o	\
        	lsubeqsp.o	\
        	lt.o  		\
+        ltest.o         \
        	ludiv.o		\
        	luge.o		\
        	lugt.o		\
@@ -152,6 +154,7 @@ OBJS = 	add.o		\
        	makebool.o	\
        	mod.o  		\
        	mul.o  		\
+        mul8.o          \
 	mulax3.o	\
 	mulax5.o	\
 	mulax6.o	\
@@ -161,7 +164,6 @@ OBJS = 	add.o		\
        	ne.o   		\
        	neg.o  		\
        	or.o   		\
-	pleasp.o	\
 	popa.o 		\
        	popsreg.o	\
 	push1.o	       	\
@@ -216,7 +218,10 @@ OBJS = 	add.o		\
        	ugt.o		\
        	ule.o		\
        	ult.o		\
+        udiv32by16r16.o \
        	umod.o		\
+        umul16x16r32.o  \
+        umul8x8r16.o    \
        	xor.o           \
         zeropage.o
 

@@ -9,9 +9,13 @@
 
 #include "integer.h"
 
-
 /* Status of Disk Functions */
 typedef BYTE	DSTATUS;
+
+/* Disk Status Bits (DSTATUS) */
+#define STA_NOINIT		0x01	/* Drive not initialized */
+#define STA_NODISK		0x02	/* No medium in the drive */
+#define STA_PROTECT		0x04	/* Write protected */
 
 /* Results of Disk Functions */
 typedef enum {
@@ -22,12 +26,11 @@ typedef enum {
 	RES_PARERR		/* 4: Invalid Parameter */
 } DRESULT;
 
-
 /*---------------------------------------*/
 /* Prototypes for disk control functions */
 
 // return RES_NOTRDY if disk doesn't respond
-DSTATUS disk_poll(BYTE drv);
+DSTATUS disk_poll();
 
 DSTATUS disk_initialize (BYTE);
 DSTATUS disk_status (BYTE);
@@ -37,16 +40,6 @@ DRESULT disk_write (BYTE, const BYTE*, DWORD, BYTE);
 #endif
 DRESULT disk_ioctl (BYTE, BYTE, void*);
 void	disk_timerproc (void);
-
-
-
-
-/* Disk Status Bits (DSTATUS) */
-
-#define STA_NOINIT		0x01	/* Drive not initialized */
-#define STA_NODISK		0x02	/* No medium in the drive */
-#define STA_PROTECT		0x04	/* Write protected */
-
 
 /* Command code for disk_ioctrl() */
 

@@ -54,6 +54,6 @@ uint8_t menu_dispatch(uint8_t tick);
 void menu_init();
 void draw_menu();
 void draw_item(char *s, uint8_t x, uint8_t y, uint8_t align);
-uint8_t menu_busy(uint8_t yes);
+void menu_busy(uint8_t yes);
 
 #endif

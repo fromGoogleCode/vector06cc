@@ -21,6 +21,8 @@
 #ifndef _SPECIALIO_J
 #define _SPECIALIO_J
 
+//Values should correspond to parameter values in /src/floppy/floppy.v
+
 #define 	IOPORT_BASE			0xE000
 #define		IOPORT_MMC_A		0x00			/* BIT0: SD_DAT3/CS */
 #define		IOPORT_SPDR			0x01

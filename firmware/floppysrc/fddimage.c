@@ -31,8 +31,6 @@ enum FDDErrors{
 
 static uint8_t fdderror;
 
-static FDDImage fdd;
-
 static void seterror(uint8_t e) {
 	fdderror = e;
 }
@@ -43,8 +41,8 @@ uint8_t fdd_clearerror() {
 	return result;
 }
 
-uint8_t fdd_load(FIL* file, FDDImage *fdd, uint8_t *bufptr) {
-	WORD w1;
+uint8_t fdd_load(FIL* file, FDDImage *fdd, uint8_t *bufptr)
+{
 	fdd_clearerror();
 	
 	//fdd->ntracks = file->fsize / (2*FDD_NSECTORS*FDD_SECTOR_SIZE);	// these seem to be fixed more or less
@@ -71,6 +69,8 @@ uint8_t fdd_seek(FDDImage *fdd, uint8_t side, uint8_t track, uint8_t sector) {
 	fdd->cur_sector = sector;
 	fdd->offset = 0;
 	fdd->ready = 0;
+	
+	return (uint8_t) 0;
 }
 
 static uint32_t calc_offset(FDDImage* fdd) {

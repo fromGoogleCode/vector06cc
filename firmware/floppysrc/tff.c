@@ -467,7 +467,9 @@ char make_dirfile (			/* 1: error - detected an invalid format, '\0'or'/': next 
 				(t == 8) ? (b &= ~0x08) : (b &= ~0x10);
 			if (c >= 'a' && c <= 'z') {		/* Convert to upper case */
 				c -= 0x20;
-				if (_USE_NTFLAG) (t == 8) ? (a |= 0x08) : (a |= 0x10);
+				#if _USE_NTFLAG != 0
+					a |= (t == 8) ? 0x08 : 0x10;
+				#endif
 			}
 		}
 	md_l1:
@@ -636,10 +638,13 @@ BYTE check_fs (		/* 0:The FAT boot record, 1:Valid boot record but not an FAT, 2
 /*-----------------------------------------------------------------------*/
 
 static
-FRESULT auto_mount (		/* FR_OK(0): successful, !=0: any error occured */
-	const char **path,		/* Pointer to pointer to the path name (drive number) */
-	BYTE chk_wp				/* !=0: Check media write protection for write access */
-)
+FRESULT auto_mount		/* FR_OK(0): successful, !=0: any error occured */
+		( const char **path		/* Pointer to pointer to the path name (drive number) */
+		, BYTE
+		#if !_FS_READONLY
+			chk_wp	/* !=0: Check media write protection for write access */
+		#endif
+		)
 {
 	BYTE fmt;
 	DSTATUS stat;
@@ -659,11 +664,12 @@ FRESULT auto_mount (		/* FR_OK(0): successful, !=0: any error occured */
 	/* Chekck if the logical drive has been mounted or not */
 	if (fs->fs_type) {
 		stat = disk_status(0);
-		if (!(stat & STA_NOINIT)) {				/* If the physical drive is kept initialized */
-#if !_FS_READONLY
-			if (chk_wp && (stat & STA_PROTECT))	/* Check write protection if needed */
-				return FR_WRITE_PROTECTED;
-#endif
+		if (!(stat & STA_NOINIT))
+		{  /* If the physical drive is kept initialized */
+			#if !_FS_READONLY
+				if (chk_wp && (stat & STA_PROTECT))	/* Check write protection if needed */
+					return FR_WRITE_PROTECTED;
+			#endif
 			return FR_OK;						/* The file system object is valid */
 		}
 	}
@@ -1613,4 +1619,3 @@ FRESULT f_rename (
 #endif /* _FS_MINIMIZE == 0 */
 #endif /* _FS_MINIMIZE <= 1 */
 #endif /* _FS_MINIMIZE <= 2 */
-

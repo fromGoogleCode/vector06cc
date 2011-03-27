@@ -6,8 +6,8 @@
 #define WITH_SERIAL
 
 #define VERBOSE 2	// 1: mostly quiet
-			// 2: log all requests
-			// 3: obsessive, print sector dumps
+					// 2: log all requests
+					// 3: obsessive, print sector dumps
 
 
 #define FDD_SECTOR_SIZE		1024U

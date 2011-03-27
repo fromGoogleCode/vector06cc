@@ -31,7 +31,7 @@
 
 extern void __fastcall__ _seterrno (unsigned char code);
 
-#pragma staticlocals(on)
+#pragma static-locals(on)
 
 
 
@@ -214,7 +214,7 @@ static void PushBack (void)
 Yank:
     asm ("dec %v", CharCount);
 
-Done:
+Done: return;
 }
 
 
@@ -261,7 +261,7 @@ static void ReadChar (void)
     asm ("bne %g", Done);
     asm ("inc %v+1", CharCount);
 
-Done:
+Done: return;
 }
 
 
@@ -291,7 +291,7 @@ static void CheckEnd (void)
     asm ("beq %g", Done);
 
         Error (RC_EOF);
-Done:
+Done: return;
 }
 
 
@@ -407,7 +407,7 @@ Loop:   asm ("lda %v,y", IntVal);
         asm ("inc %v", Assignments);
         asm ("bne %g", Done);
         asm ("inc %v+1", Assignments);
-Done:
+Done:	return;
     }
 }
 

@@ -15,7 +15,7 @@ CC = cc65
 LD = ld65
 
 AFLAGS	= -t $(SYS) -I../../asminc
-CFLAGS	= -Osir -g -T -t $(SYS) --forget-inc-paths -I . -I ../../include
+CFLAGS	= -Osir -t $(SYS) --forget-inc-paths -I . -I ../../include
 
 #--------------------------------------------------------------------------
 # Rules

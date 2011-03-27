@@ -30,12 +30,9 @@
 extern uint8_t* dmem;
 extern char* ptrfile;
 
-static uint8_t fsel_index;		// currently selected item
 static uint8_t	fsel_pagestart;	// start refresh from here
 static uint8_t fsel_redraw;	// plz redraw file selector, teh slow
 static uint8_t fsel_hasnextpage; 
-
-static uint16_t delay = 1;
 static uint8_t joy_status;
 
 #define STATE_MENU 		0
@@ -81,9 +78,11 @@ static void fsel_getselected(char *file);
 void aboot_anim();
 void aboot_show();
 
-uint8_t menu_busy(uint8_t status) {
+void menu_busy(uint8_t status)
+{
 	char *text;
-	switch (status) {
+	switch (status)
+	{
 		case 0:	text = state == STATE_ABOOT2 ? TXT_MENU_ABOOTHALP : TXT_MENU_HALP;
 				break;
 		case 1: text = TXT_MENU_BUSY;
@@ -96,55 +95,49 @@ uint8_t menu_busy(uint8_t status) {
 	osd_puts(text);
 }
 
-uint8_t menu_dispatch(uint8_t tick) {
+uint8_t menu_dispatch(uint8_t tick)
+{
 	uint8_t result = MENURESULT_NOTHING;
 	
-	if (tick && (state == STATE_ABOOT2)) {
-		aboot_anim(); 
-	}
+	if (tick && (state == STATE_ABOOT2)) aboot_anim(); 
 
 	if (inactivity) inactivity--;
-	if (!inactivity && state == STATE_FSEL) {
-		menu_init();
-	}
+	if (!inactivity && state == STATE_FSEL)	menu_init();
 	
-	if (JOYSTICK != joy_status) {
+	if (JOYSTICK != joy_status)
+	{
 		joy_status = JOYSTICK;
 		
 		inactivity = INACTIVITY;
 		
-		switch (state) {
+		switch (state)
+		{
 		case STATE_ABOOT:
-			if (joy_status == 0) {
-				state = STATE_ABOOT2;
-			}
+			if (!joy_status) state = STATE_ABOOT2;
 			break;
-			
 		case STATE_MENU:
-			if (joy_status & JOY_UP) menu_y = 0;
-			else if (joy_status & JOY_DN) menu_y = 2;
-			else menu_y = 1;
-			
-			if (joy_status & JOY_LT) menu_x = 0;
-			else if (joy_status & JOY_RT) menu_x = 2;
-			else menu_x = 1;
+			menu_y	= (joy_status & JOY_UP)	? 0
+					: (joy_status & JOY_DN) ? 2 : 1;
+					
+			menu_x	= (joy_status & JOY_LT) ? 0
+					: (joy_status & JOY_RT) ? 2 : 1;
 
 			draw_menu();
 			
-			if (joy_status & JOY_FIRE) {
+			if (joy_status & JOY_FIRE)
+			{
 				state = STATE_WAITBREAK;
 				menu_selected = menu_x+menu_y*3;
 			}
 			break;
 			
 		case STATE_WAITBREAK:
-			if (!(joy_status & JOY_FIRE)) {
-				switch_state();
-			}
+			if (!(joy_status & JOY_FIRE)) switch_state();
 			break;
 			
 		case STATE_WAITBREAK2:
-			if (!(joy_status & JOY_FIRE)) {
+			if (!(joy_status & JOY_FIRE))
+			{
 				fsel_getselected(ptrfile + 10);
 				ser_puts("Selected image: "); ser_puts(ptrfile); ser_nl();
 				menu_init();
@@ -153,41 +146,38 @@ uint8_t menu_dispatch(uint8_t tick) {
 			break;
 			
 		case STATE_ABOOT2:
-			if (!(joy_status & JOY_FIRE)) {
-				menu_init();
-			}
+			if (!(joy_status & JOY_FIRE)) menu_init();
 			break;
 			
 		case STATE_FSEL:
-			if (joy_status & JOY_UP) {
-				if (menu_y > 0)	{
-					menu_y -= 1;
-				} else if (fsel_pagestart != 0) {
+			if (joy_status & JOY_UP)
+			{
+				if (menu_y > 0)	menu_y -= 1;
+				else if (fsel_pagestart != 0)
+				{
 					fsel_pagestart -= FSEL_PAGESIZE-1;
 					menu_y = FSEL_NLINES-1;
 					fsel_redraw = 1;
 				}
 			} 
 			
-			if (joy_status & JOY_DN) {
-				if (menu_y  < FSEL_NLINES-1) {
-					menu_y += 1;
-				} else if (fsel_hasnextpage) {
+			if (joy_status & JOY_DN)
+			{
+				if (menu_y  < FSEL_NLINES-1) menu_y += 1;
+				else if (fsel_hasnextpage)
+				{
 					menu_y = 0;
 					fsel_pagestart += FSEL_PAGESIZE-1;
 					fsel_redraw = 1;
 				}
 			}
 			
-			if (joy_status & JOY_LT) {
-				menu_x = (menu_x - 1) % 2;
-			}
+			if (joy_status & JOY_LT) menu_x = (menu_x - 1) % 2;
 			
-			if (joy_status & JOY_RT) {
-				menu_x = (menu_x + 1) % 2;
-			}
+			if (joy_status & JOY_RT) menu_x = (menu_x + 1) % 2;
 			
-			if (fsel_redraw) {
+			if (fsel_redraw)
+			{
 				fsel_redraw = 0;
 				draw_fsel();
 			}
@@ -196,9 +186,7 @@ uint8_t menu_dispatch(uint8_t tick) {
 			menu_selected = menu_y*2 + menu_x;
 			fsel_showselection(1);
 			
-			if (joy_status & JOY_FIRE != 0) {
-				state = STATE_WAITBREAK2;
-			}
+			if (joy_status & JOY_FIRE) state = STATE_WAITBREAK2;
 		
 			break;
 		}
@@ -207,8 +195,10 @@ uint8_t menu_dispatch(uint8_t tick) {
 	return result;
 }
 
-void menu_init() {
-	if (state != STATE_MENU) {
+void menu_init()
+{
+	if (state != STATE_MENU)
+	{
 		state = STATE_MENU;
 		joy_status = 0377;
 		
@@ -307,7 +297,8 @@ uint8_t fsel_index2offs(uint8_t idx) {
 	return 33 + (idx/2)*32 + (idx % 2)*16;
 }
 
-void draw_fsel(void) {
+static void draw_fsel(void)
+{
 	uint8_t i;
 	char *uptr;
 	
@@ -317,9 +308,12 @@ void draw_fsel(void) {
 		ser_puts(" ok"); ser_nl();
 
 		// skip until pagestart
-		if (fsel_pagestart != 0) {
-			for (i = 0; i < fsel_pagestart; i++) {
-				if (philes_nextfile(0, 0) != FR_OK) {
+		if (fsel_pagestart != 0)
+		{
+			for (i = 0; i < fsel_pagestart; i++)
+			{
+				if (philes_nextfile(0, 0) != FR_OK)
+				{
 					fsel_pagestart = 0;
 					break;
 				}
@@ -352,7 +346,8 @@ void fsel_getselected(char *file) {
 	while (i-- && ((u = 0177 & *uptr++) != 32)) {
 		*file++ = u;
 	}
-	*file++ = '\000';
+	*file = 0;
+	//*file++ = '\000';
 }
 
 
@@ -361,7 +356,6 @@ char* aboot4   = "sensi.org/~svo/vector06c";
 char* aboot3   = "vector06cc.googlecode.com";
 char* aboot5   = "";
 char* aboot6   = "Thank you for using VECTOR-06CC!";
-//char* aboot6   = "--------------------------------";
 
 char* dude[]   = {"\\o/",
 		  " | ",

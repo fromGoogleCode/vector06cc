@@ -1,4 +1,3 @@
-SHELL=cmd.exe
 C65=cc65
 A65=ca65
 L65=ld65
@@ -13,14 +12,14 @@ ASSS=philes.s menu.s osd.s slave.s fddimage.s tff.s mmc.s timer.s serial.s main.
 
 # snapshot version of cc65 has a patch regarding -Os
 # release version will only work with -Oirs
-CFLAGS=-Os -t none -T --cpu 6502
-
+CFLAGS=-Osir -t none --cpu 6502
+#--writable-strings
 
 
 all:	disk
 
 disk:	$(OBJS)
-	$(L65) -C vector.lc lib/vector.o $(OBJS) lib/vector.lib -o disk.bin -m disk.map
+	$(L65) -o disk.bin -m disk.map -C vector.lc lib/vector.o $(OBJS) lib/vector.lib
 	bin2hex disk.bin
 	copy disk.hex ..\..\workbench\floppy\src
 	copy disk.hex ..\..

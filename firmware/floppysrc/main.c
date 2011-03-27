@@ -34,8 +34,9 @@
 
 #include "philes.h"
 
-char* cnotice1 = "    VECTOR-06C FPGA REPLICA     ";
+char* cnotice1 = " VECTOR-06C FPGA REPLICA v.3.67 ";
 char* cnotice2 = "  (C)2008 VIACHESLAV SLAVINSKY  ";
+
 
 /*---------------------------------------------------------*/
 /* User Provided Timer Function for FatFs module           */
@@ -43,43 +44,17 @@ char* cnotice2 = "  (C)2008 VIACHESLAV SLAVINSKY  ";
 /* This is a real time clock service to be called from     */
 /* FatFs module. Any valid time must be returned even if   */
 /* the system does not support a real time clock.          */
-DWORD get_fattime (void)
-{
-	return 0;
-}
-
+DWORD get_fattime (void) { return 0; }
 
 BYTE* Buffer = (BYTE *)0x0200;
 
-void print_result(DRESULT result) {
-	switch (result) {
-		case 0:
-			break;
-		default:
-			ser_puts(" :( ");
-			print_hex((BYTE)result);
-			ser_nl();
-			break;
-	}
-}
-
-void fill_filename(char *buf, char *fname) {
-	memset(buf, 0, 12);
-	strncpy(buf, fname, 12);
-}
-
-#define CHECKRESULT {/*if (result) break;*/}
-
 extern char* ptrfile;
 
-void main(void) {
-	BYTE res;
-	//UINT bytesread;
-	//FIL	file1;
 
-	DRESULT result;
-	FRESULT fresult;
-	
+FRESULT thrall(char*, uint8_t*);
+
+void main(void)
+{
 	SLAVE_STATUS = 0;
 	GREEN_LEDS = 0xC3;
 
@@ -90,19 +65,7 @@ void main(void) {
 	ser_nl(); ser_puts(cnotice2);
 
 	thrall(ptrfile, Buffer);
-//	for(;;) {
-//		philes_mount();
-//		fresult = philes_opendir();
-//		
-//		if (fresult == FR_OK) {
-//			philes_nextfile(ptrfile+10, 1);
-//		}
-//		ser_puts("=> "); ser_puts(ptrfile); ser_nl();
-//
-//		useimage(ptrfile, Buffer);
-//		ser_puts("RELOAD");
-//		delay2(100);
-//	}
-	print_result(result);
+
 	ser_puts("\r\nWTF?");
+	for(;;);
 }
